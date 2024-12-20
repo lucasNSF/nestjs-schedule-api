@@ -1,33 +1,26 @@
-import {
-  HttpStatus,
-  INestApplication,
-  UsePipes,
-  ValidationPipe,
-} from '@nestjs/common';
+import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 
 import { InMemoryUserRepository } from '../../src/user/repositories/in-memory-user.repository';
 import { UserRepository } from '../../src/user/repositories/user.repository';
-import { UserController } from '../../src/user/user.controller';
 import { UserModule } from '../../src/user/user.module';
-
-@UsePipes(new ValidationPipe({ transform: true }))
-class MockedUserController extends UserController {}
 
 describe('User Controller (e2e)', () => {
   let app: INestApplication;
+  let userRepository: InMemoryUserRepository;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      controllers: [MockedUserController],
       imports: [UserModule],
-      providers: [
-        { provide: UserRepository, useClass: InMemoryUserRepository },
-      ],
-    }).compile();
+    })
+      .overrideProvider(UserRepository)
+      .useClass(InMemoryUserRepository)
+      .compile();
 
     app = moduleRef.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ transform: true }));
+    userRepository = moduleRef.get(UserRepository);
     await app.init();
   });
 
@@ -72,6 +65,10 @@ describe('User Controller (e2e)', () => {
           expect(statusCode).toBe(400);
         });
     });
+  });
+
+  afterEach(() => {
+    userRepository.clear();
   });
 
   afterAll(async () => {

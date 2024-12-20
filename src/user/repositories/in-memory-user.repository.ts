@@ -5,7 +5,7 @@ import { UserRepository } from './user.repository';
 
 @Injectable()
 export class InMemoryUserRepository extends UserRepository {
-  private readonly db: UserEntity[] = [];
+  private db: UserEntity[] = [];
 
   async create(props: UserEntity) {
     this.db.push(props);
@@ -13,5 +13,9 @@ export class InMemoryUserRepository extends UserRepository {
 
   async getUserByUsername(username: string): Promise<UserEntity> {
     return this.db.find((user) => user.username === username);
+  }
+
+  clear() {
+    this.db = [];
   }
 }
