@@ -1,16 +1,20 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { OutputCreateUserDTO } from 'src/user/dtos/create-user.dto';
 import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async loginWithCredentials(
     username: string,
     password: string,
-  ): Promise<OutputCreateUserDTO> {
+  ): Promise<OutputCreateUserDTO & { accessToken: string }> {
     try {
       const user = await this.userService.getUserByUsername(username);
 
@@ -23,11 +27,19 @@ export class AuthService {
         isAnonymous: user.isAnonymous,
       };
 
-      if (!user.password) return output;
+      if (!user.password) {
+        const { accessToken } = this.loginWithJWT(output);
+
+        return { ...output, accessToken };
+      }
 
       const isMatch = await bcrypt.compare(password, user.password);
 
-      if (isMatch) return output;
+      if (isMatch) {
+        const { accessToken } = this.loginWithJWT(output);
+
+        return { ...output, accessToken };
+      }
 
       throw new UnauthorizedException();
     } catch (err) {
@@ -38,5 +50,15 @@ export class AuthService {
 
   async loginAnonymous(): Promise<OutputCreateUserDTO> {
     return this.userService.create({});
+  }
+
+  private loginWithJWT(user: OutputCreateUserDTO): { accessToken: string } {
+    const payload = { sub: user.id, isAnonymous: user.isAnonymous };
+
+    return {
+      accessToken: this.jwtService.sign(payload, {
+        secret: process.env.JWT_SECRET,
+      }),
+    };
   }
 }
