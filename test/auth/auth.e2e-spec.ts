@@ -2,6 +2,10 @@ import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AuthModule } from 'src/auth/auth.module';
 import { OutputCreateUserDTO } from 'src/user/dtos/create-user.dto';
+import {
+  closeInMongodConnection,
+  rootMongooseTestModule,
+} from 'src/utils/mongodb-testing.utils';
 import * as request from 'supertest';
 
 describe('User Controller (e2e)', () => {
@@ -9,7 +13,7 @@ describe('User Controller (e2e)', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [AuthModule],
+      imports: [rootMongooseTestModule(), AuthModule],
     }).compile();
 
     app = moduleRef.createNestApplication({ snapshot: true });
@@ -57,6 +61,7 @@ describe('User Controller (e2e)', () => {
   });
 
   afterAll(async () => {
+    await closeInMongodConnection();
     await app.close();
   });
 });

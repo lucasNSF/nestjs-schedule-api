@@ -1,9 +1,15 @@
 import { Test } from '@nestjs/testing';
-import { InMemoryUserRepository } from 'src/user/repositories/in-memory-user.repository';
+import { MongoDBUserRepository } from 'src/user/repositories/mongodb-user.repository';
 import { UserRepository } from 'src/user/repositories/user.repository';
 import { UserService } from 'src/user/user.service';
 
+import {
+  closeInMongodConnection,
+  rootMongooseTestModule,
+} from 'src/utils/mongodb-testing.utils';
 import { AuthService } from './auth.service';
+import { MongooseModule } from '@nestjs/mongoose';
+import { User, UserSchema } from 'src/user/entities/mongodb-user.entity';
 
 describe('UserService', () => {
   let authService: AuthService;
@@ -11,15 +17,23 @@ describe('UserService', () => {
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
+      imports: [
+        rootMongooseTestModule(),
+        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+      ],
       providers: [
-        AuthService,
+        { provide: UserRepository, useClass: MongoDBUserRepository },
         UserService,
-        { provide: UserRepository, useClass: InMemoryUserRepository },
+        AuthService,
       ],
     }).compile();
 
     authService = moduleRef.get(AuthService);
     userService = moduleRef.get(UserService);
+  });
+
+  afterEach(async () => {
+    await closeInMongodConnection();
   });
 
   describe('loginAnonymous()', () => {
