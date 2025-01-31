@@ -2,25 +2,32 @@ import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 
-import { InMemoryUserRepository } from '../../src/user/repositories/in-memory-user.repository';
 import { UserRepository } from '../../src/user/repositories/user.repository';
 import { UserModule } from '../../src/user/user.module';
+import { MongoDBUserRepository } from 'src/user/repositories/mongodb-user.repository';
+import {
+  closeInMongodConnection,
+  rootMongooseTestModule,
+} from 'src/utils/mongodb-testing.utils';
 
 describe('User Controller (e2e)', () => {
   let app: INestApplication;
-  let userRepository: InMemoryUserRepository;
+  let userRepository: MongoDBUserRepository;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
-      imports: [UserModule],
+      imports: [rootMongooseTestModule(), UserModule],
     })
       .overrideProvider(UserRepository)
-      .useClass(InMemoryUserRepository)
+      .useClass(MongoDBUserRepository)
       .compile();
 
     app = moduleRef.createNestApplication();
+
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
+
     userRepository = moduleRef.get(UserRepository);
+
     await app.init();
   });
 
@@ -67,11 +74,8 @@ describe('User Controller (e2e)', () => {
     });
   });
 
-  afterEach(() => {
-    userRepository.clear();
-  });
-
   afterAll(async () => {
+    await closeInMongodConnection();
     await app.close();
   });
 });
