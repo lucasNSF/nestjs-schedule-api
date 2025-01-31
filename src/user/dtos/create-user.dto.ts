@@ -1,10 +1,8 @@
 import {
-  IsBoolean,
   IsEmail,
   IsOptional,
   IsString,
   IsStrongPassword,
-  IsUUID,
 } from 'class-validator';
 
 export class InputCreateUserDTO {
@@ -24,16 +22,9 @@ export class InputCreateUserDTO {
   password?: string;
 }
 
-export class OutputCreateUserDTO {
-  @IsUUID()
-  id: string;
-
-  @IsString()
+export type OutputCreateUserDTO = {
+  id: unknown;
   username: string;
-
-  @IsEmail()
   email: string;
-
-  @IsBoolean()
   isAnonymous: boolean;
-}
+};

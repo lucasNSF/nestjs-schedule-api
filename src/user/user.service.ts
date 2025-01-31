@@ -7,7 +7,7 @@ import {
   OutputCreateUserDTO,
 } from './dtos/create-user.dto';
 import { UserRepository } from './repositories/user.repository';
-import { UserEntity } from './user.entity';
+import { UserEntity } from './entities/user.entity';
 
 @Injectable()
 export class UserService {
@@ -28,24 +28,16 @@ export class UserService {
       ? await bcrypt.hash(password, 10)
       : undefined;
 
-    const id = randomUUID();
-
-    const user: UserEntity = {
-      id,
-      username: `User-${id}`,
+    const inputCreateUser: Omit<UserEntity, 'id'> = {
+      username: `User-${randomUUID()}`,
       email,
       password: encryptedPassword,
       isAnonymous,
     };
 
-    this.userRepository.create(user);
+    const outputUserDTO = await this.userRepository.create(inputCreateUser);
 
-    return {
-      id: user.id,
-      email: user.email,
-      isAnonymous,
-      username: user.username,
-    };
+    return outputUserDTO;
   }
 
   async getUserByUsername(username: string): Promise<UserEntity> {

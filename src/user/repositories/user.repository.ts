@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
-import { UserEntity } from '../user.entity';
+import { OutputCreateUserDTO } from '../dtos/create-user.dto';
+import { UserEntity } from '../entities/user.entity';
 
 @Injectable()
 export abstract class UserRepository {
-  abstract create(props: UserEntity): Promise<void>;
-  abstract getUserByUsername(username: string): Promise<UserEntity>;
+  abstract create(props: Omit<UserEntity, 'id'>): Promise<OutputCreateUserDTO>;
+
+  abstract getUserByUsername(
+    username: string,
+  ): Promise<OutputCreateUserDTO | null>;
 }
